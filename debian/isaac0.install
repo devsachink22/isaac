@@ -1,0 +1,9 @@
+opt/isaac/env.sh
+opt/isaac/env_wrapper.sh
+opt/isaac/setup.sh
+opt/isaac/setup.bash
+opt/isaac/setup.zsh
+opt/isaac/_setup_util.py
+opt/isaac/.catkin
+opt/isaac/lib/*
+opt/isaac/share/*

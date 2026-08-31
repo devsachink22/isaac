@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>plansys2_pddl_parser</name>
+  <version>2.0.8</version>
+  
+  <description>This package contains a library for parsing PDDL domains and problems.
+  
+    This package derives from the work of Anders Jonsson, contained in https://github.com/wisdompoet/universal-pddl-parser.git
+    with many modifications by Francisco Martin:
+      * ROS2 packaging
+      * Source code structure refactor
+      * CMakeLists.txt for cmake compilation
+      * Reading from String instead of files
+      * Licensing
+      Modifications TRACLabs: Backport to ROS1
+  </description>
+
+  <maintainer email="ana@traclabs.com">A.C. Huaman Quispe</maintainer>
+ 
+  <license>Apache License, Version 2.0</license>
+
+  <author>Anders Jonsson</author>
+  <author>Francisco Martin</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>plansys2_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+  </export>
+
+</package>

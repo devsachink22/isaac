@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>optic_planner</name>
+  <version>0.0.12</version>
+  <description>The OPTIC package</description>
+  <maintainer email="kogut@spawar.navy.mil">Greg Kogut</maintainer>
+  <license>Creative Commons Zero v1.0 Universal</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>roscpp</depend>
+  <depend>flex</depend>
+  <depend>bison</depend>
+  <depend>libfl-dev</depend>
+  <depend>coinor-libcgl-dev</depend>
+  <depend>coinor-libcbc-dev</depend>
+  <export>
+  </export>
+</package>

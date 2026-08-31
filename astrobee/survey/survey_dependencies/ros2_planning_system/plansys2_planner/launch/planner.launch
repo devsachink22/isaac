@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="namespace" default="" />
+  <arg name="params_file" default="$(find plansys2_bringup)/params/plansys2_params.yaml" />
+
+<!--  <group ns="$(arg namespace)"> -->
+    <node name="planner" pkg="plansys2_planner" type="planner_node" output="screen">
+      <rosparam command="load" file="$(arg params_file)"/>
+    </node>
+<!--  </group> -->
+
+</launch>    

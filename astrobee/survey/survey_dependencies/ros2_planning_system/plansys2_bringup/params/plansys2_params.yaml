@@ -1,0 +1,7 @@
+planner:
+
+    plan_solver_plugins: ["POPF"]
+    POPF:
+      plugin: "plansys2/POPFPlanSolver"
+    TFD:
+      plugin: "plansys2/TFDPlanSolver"

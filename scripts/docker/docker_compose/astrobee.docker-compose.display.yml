@@ -1,0 +1,8 @@
+services:
+  isaac:
+    environment:
+      - XAUTHORITY=$XAUTH
+      - DISPLAY=$DISPLAY
+    volumes:
+      - $XSOCK:$XSOCK
+      - $XAUTH:$XAUTH

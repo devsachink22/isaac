@@ -1,0 +1,4 @@
+services:
+  analyst_notebook:
+    links:
+      - isaac

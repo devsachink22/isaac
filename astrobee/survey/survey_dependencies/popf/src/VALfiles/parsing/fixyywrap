@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+
+$bindir = shift @ARGV;
+$srcdir = shift @ARGV;
+
+# MacOS' sed requires '' as a parameter to -i
+system("sed -i '' 's/yyerror(char/yyerror(const char/' $bindir/pddl+.cpp");
+
+# add Homebrew's flex include path
+open IN, "g++ -E -I/usr/local/opt/flex/include $srcdir/fixyywrap.cpp |";
+open OUT, "> $bindir/fixyywrap.h";
+
+while (<IN>) {
+
+	if (m/int yywrap/) {
+		print OUT "int yyFlexLexer::yywrap() { return 1; };\n";
+	}
+
+}
+
+close IN;
+close OUT;
+
+open OUT, ">> $bindir/pddl+.cpp";
+print OUT '#include "fixyywrap.h"';
+print OUT "\n\n";
+close OUT;

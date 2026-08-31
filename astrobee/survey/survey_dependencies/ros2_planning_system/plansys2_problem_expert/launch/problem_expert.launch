@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="model_file" default="$(find plansys2_executor)/test/pddl/simple_example.pddl"/>
+  <arg name="namespace" default="" />
+  <arg name="params_file" default="$(find plansys2_bringup)/params/plansys2_params.yaml" />
+
+<!--  <group ns="$(arg namespace)"> -->
+    <node name="problem_expert" pkg="plansys2_problem_expert" type="problem_expert_node" output="screen">
+      <param name="model_file" value="$(arg model_file)"/>
+      <rosparam command="load" file="$(arg params_file)"/>
+    </node>
+<!--  </group> -->
+
+</launch>

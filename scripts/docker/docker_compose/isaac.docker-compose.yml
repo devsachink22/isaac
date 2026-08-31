@@ -1,0 +1,16 @@
+services:
+  isaac:
+    image: ${REMOTE:-isaac}/isaac:latest-ubuntu${UBUNTU_VERSION}
+    entrypoint: "/ros_entrypoint.sh"
+    command: ${cmd}
+    hostname: isaac
+    container_name: isaac
+    expose:
+      - 11311
+    environment:
+      - ROS_MASTER_URI=http://rosmaster:11311
+      - ROS_IP=172.19.0.6
+      - ROSLAUNCH_SSH_UNKNOWN=1
+    networks:
+      isaac:
+        ipv4_address: 172.19.0.6

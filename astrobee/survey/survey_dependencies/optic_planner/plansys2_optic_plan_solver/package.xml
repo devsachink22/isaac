@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>plansys2_optic_plan_solver</name>
+  <version>2.0.0</version>
+
+  <description>This package contains an OPTIC-based PDDL-based planner module for the ROS2 Planning System.</description>
+
+  <maintainer email="kogut@spawar.navy.mil">Greg Kogut</maintainer>
+
+  <license>Creative Commons Zero v1.0 Universal</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>plansys2_core</depend>
+  <depend>plansys2_msgs</depend>
+  <depend>pluginlib</depend>
+
+  <exec_depend>optic_planner</exec_depend>
+
+  <export>
+    <plansys2_core plugin="${prefix}/plansys2_optic_plan_solver_plugin.xml" />
+  </export>
+</package>

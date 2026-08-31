@@ -1,0 +1,7 @@
+services:
+  isaac:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]

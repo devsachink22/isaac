@@ -1,0 +1,68 @@
+# ROS
+*.bag
+.catkin_tools/*
+
+# Fortran module files
+*.mod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Emacs temporary
+*~
+
+# ViM swap files
+*.swp
+*.swo
+
+# Precompile python
+*.pyc
+
+# Zip files
+*.zip
+
+# catkin
+/*-build
+/*-devel
+/*-install
+/*-rootfs
+/*-kernel
+/*-logs
+/qped.sublime-workspace
+*.egg
+*.egg-info
+
+# Tags & config
+tags
+.ctags
+
+.vscode
+
+# Folders
+doc/html
+doc/latex
+
+# Pytorch models
+analyst/workspace/*.pt
+
+# Jupyter Notebooks
+analyst/workspace/.ipython
+analyst/workspace/.jupyter
+analyst/workspace/.local
+analyst/workspace/.ipynb_checkpoints
+analyst/workspace/results
+analyst/workspace/scripts/.ipynb_checkpoints
+analyst/workspace/.cache
+analyst/workspace/craft_mlt_25k.pth
+analyst/workspace/data
+
+# vscode
+isaac.code-workspace

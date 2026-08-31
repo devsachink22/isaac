@@ -1,0 +1,224 @@
+<sdf version='1.6'>
+
+<!-- Copyright (c) 2021, United States Government, as represented by the     -->
+<!-- Administrator of the National Aeronautics and Space Administration.     -->
+<!--                                                                         -->
+<!-- All rights reserved.                                                    -->
+<!--                                                                         -->
+<!-- The "ISAAC - Integrated System for Autonomous and Adaptive Caretaking   -->
+<!-- platform" software is licensed under the Apache License, Version 2.0    -->
+<!-- (the "License"); you may not use this file except in compliance with    -->
+<!-- the License. You may obtain a copy of the License at                    -->
+<!--                                                                         -->
+<!--     http://www.apache.org/licenses/LICENSE-2.0                          -->
+<!--                                                                         -->
+<!-- Unless required by applicable law or agreed to in writing, software     -->
+<!-- distributed under the License is distributed on an "AS IS" BASIS,       -->
+<!-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or         -->
+<!-- implied. See the License for the specific language governing            -->
+<!-- permissions and limitations under the License.                          -->
+
+  <world name='default'>
+
+    <physics name='default_physics' default='0' type='ode'>
+      <max_step_size>0.008</max_step_size>
+      <real_time_factor>1</real_time_factor>
+      <real_time_update_rate>125</real_time_update_rate>
+    </physics>
+
+    <scene>
+      <ambient>1 1 1 1</ambient>
+      <background>0 0 0 1</background>
+      <fog>
+        <density>0</density>
+      </fog>
+      <grid>0</grid>
+      <shadows>0</shadows>
+    </scene>
+
+    <gui fullscreen='0'>
+      <camera name='user_camera'>
+        <pose frame=''>11.6631 -11.7128 3.6436 3.13991 -0.371464 2.07968</pose>
+        <view_controller>fps</view_controller>
+        <projection_type>perspective</projection_type>
+      </camera>
+    </gui>
+
+    <gravity>0 0 0</gravity>
+    <magnetic_field>0 0 0</magnetic_field>
+    <atmosphere type='adiabatic'/>
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <latitude_deg>0</latitude_deg>
+      <longitude_deg>0</longitude_deg>
+      <elevation>0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+
+    <include>
+      <uri>model://astrobee_iss</uri>
+    </include>
+
+    <include>
+      <uri>model://astrobee_dock</uri>
+      <pose>9.5868938 -10.0604698 4.2955872 0 0 0</pose>
+    </include>
+
+    <!--
+      Cargo-sized berths below the two Astrobee dock bays. Their local
+      dimensions and orientation match the half-CTB cargo mesh:
+      0.266792 x 0.464894 x 0.275782 m. The local +Y face points away from
+      the wall. A released cargo attaches flush to the front of the green
+      berth instead of occupying its volume.
+    -->
+    <model name='cargo_berth_available'>
+      <static>true</static>
+      <pose>9.8193408 -9.806 4.7411744 0 0 -1.5707963</pose>
+      <link name='berth'>
+        <!-- No collision: the magnetic drop plugin aligns cargo to its face. -->
+        <visual name='available_volume'>
+          <geometry>
+            <box><size>0.266792 0.464894 0.275782</size></box>
+          </geometry>
+          <material>
+            <ambient>0.02 0.8 0.08 1</ambient>
+            <diffuse>0.02 0.8 0.08 1</diffuse>
+            <emissive>0.01 0.15 0.02 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <model name='cargo_berth_blocked'>
+      <static>true</static>
+      <pose>9.8193408 -10.312 4.7411744 0 0 -1.5707963</pose>
+      <link name='berth'>
+        <!-- Collision plus behavior-level rejection make this berth blocked. -->
+        <collision name='blocked_volume'>
+          <geometry>
+            <box><size>0.266792 0.464894 0.275782</size></box>
+          </geometry>
+        </collision>
+        <visual name='blocked_volume'>
+          <geometry>
+            <box><size>0.266792 0.464894 0.275782</size></box>
+          </geometry>
+          <material>
+            <ambient>0.02 0.15 0.9 1</ambient>
+            <diffuse>0.02 0.15 0.9 1</diffuse>
+            <emissive>0.01 0.03 0.18 1</emissive>
+          </material>
+        </visual>
+        <!-- A black X on the outward face makes the blocked state explicit. -->
+        <visual name='blocked_cross_positive'>
+          <pose>0 0.241447 0 0 0.8018 0</pose>
+          <geometry>
+            <box><size>0.3837 0.018 0.018</size></box>
+          </geometry>
+          <material>
+            <ambient>0 0 0 1</ambient>
+            <diffuse>0 0 0 1</diffuse>
+            <emissive>0 0 0 1</emissive>
+          </material>
+        </visual>
+        <visual name='blocked_cross_negative'>
+          <pose>0 0.241447 0 0 -0.8018 0</pose>
+          <geometry>
+            <box><size>0.3837 0.018 0.018</size></box>
+          </geometry>
+          <material>
+            <ambient>0 0 0 1</ambient>
+            <diffuse>0 0 0 1</diffuse>
+            <emissive>0 0 0 1</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+
+    <include>
+      <uri>model://astrobee_handrail_21_5</uri>
+      <name>handrail</name>
+      <pose>11.947 -9.252 5.045 0 0 3.1415</pose>
+    </include>
+
+    <light name='user_point_light_px' type='point'>
+      <pose frame=''>30 0 0 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <light name='user_point_light_nx' type='point'>
+      <pose frame=''>-30 0 0 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <light name='user_point_light_py' type='point'>
+      <pose frame=''>0 30 0 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <light name='user_point_light_ny' type='point'>
+      <pose frame=''>0 -30 0 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <light name='user_point_light_pz' type='point'>
+      <pose frame=''>0 0 30 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <light name='user_point_light_nz' type='point'>
+      <pose frame=''>0 0 -30 0 -0 0</pose>
+      <diffuse>0.5 0.5 0.5 1</diffuse>
+      <specular>0.1 0.1 0.1 1</specular>
+      <attenuation>
+        <range>100</range>
+        <constant>0.1</constant>
+        <linear>0.001</linear>
+        <quadratic>0.001</quadratic>
+      </attenuation>
+      <cast_shadows>0</cast_shadows>
+      <direction>0 0 -1</direction>
+    </light>
+    <plugin name="plugin_speed" filename="libgazebo_world_plugin_speed.so"/>
+  </world>
+</sdf>

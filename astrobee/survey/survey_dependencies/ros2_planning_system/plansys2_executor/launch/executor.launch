@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="namespace" default="" />
+  <arg name="params_file" default="$(find plansys2_bringup)/params/plansys2_params.yaml" />
+  <arg name="default_action_bt_xml_filename" default="$(find plansys2_executor)/behavior_trees/plansys2_action_bt.xml" />
+  <arg name="default_start_action_bt_xml_filename" default="$(find plansys2_executor)/behavior_trees/plansys2_start_action_bt.xml"/>
+  <arg name="default_end_action_bt_xml_filename" default="$(find plansys2_executor)/behavior_trees/plansys2_end_action_bt.xml" />
+  <arg name="bt_builder_plugin" default="SimpleBTBuilder"/>
+
+<!--  <group ns="$(arg namespace)"> -->
+    <node name="executor" pkg="plansys2_executor" type="executor_node" output="screen">
+      <param name="default_action_bt_xml_filename" value="$(arg default_action_bt_xml_filename)"/>
+      <param name="default_start_action_bt_xml_filename" value="$(arg default_start_action_bt_xml_filename)"/>
+      <param name="default_end_action_bt_xml_filename" value="$(arg default_end_action_bt_xml_filename)"/>
+      <param name="bt_builder_plugin" value="$(arg bt_builder_plugin)"/>      
+      <rosparam command="load" file="$(arg params_file)"/>
+    </node>
+<!--  </group> -->
+
+</launch>  
+ 
+
