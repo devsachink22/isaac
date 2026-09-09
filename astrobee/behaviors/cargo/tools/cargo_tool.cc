@@ -34,6 +34,9 @@
 // Action
 #include <isaac_msgs/CargoAction.h>
 
+// Service
+#include <ff_msgs/SetState.h>
+
 // TF2 support
 #include <tf2_ros/transform_listener.h>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.h>
@@ -55,6 +58,7 @@ DEFINE_bool(pause, false, "Send a pause command");
 DEFINE_bool(resume, false, "Send an unpause command");
 DEFINE_bool(pick, false, "Send a pick up cargo command");
 DEFINE_bool(drop, false, "Send a drop cargo command");
+DEFINE_int32(block_berth, 0, "Select blocked cargo berth (1 or 2)");
 DEFINE_string(id, "cargo", "If of the cargo bag");
 DEFINE_string(pose, "", "Berth pose: xyz xyzw");
 
@@ -192,9 +196,15 @@ int main(int argc, char *argv[]) {
   if (FLAGS_resume) cmd++;
   if (FLAGS_pick)   cmd++;
   if (FLAGS_drop) cmd++;
+  if (FLAGS_block_berth != 0) cmd++;
   // Check we have specified one of the required switches
   if (cmd != 1) {
-    std::cerr << "You must specify one inspection goal -pick -drop -pause or -resume" << std::endl;
+    std::cerr << "Specify one cargo command: -pick, -drop, -pause, "
+              << "-resume, or -block_berth" << std::endl;
+    return 1;
+  }
+  if (FLAGS_block_berth < 0 || FLAGS_block_berth > 2) {
+    std::cerr << "The blocked berth must be 1 or 2" << std::endl;
     return 1;
   }
   if ((FLAGS_pick || FLAGS_drop) && FLAGS_pose.empty()) {
@@ -205,10 +215,33 @@ int main(int argc, char *argv[]) {
     std::cout << "The pick command must also specify an id flag" << std::endl;
     return 1;
   }
-  // Action clients
-  ff_util::FreeFlyerActionClient<isaac_msgs::CargoAction> client;
-  // Create a node handle
+  // Create a node handle in the selected robot namespace.
   ros::NodeHandle nh(std::string("/") + FLAGS_ns);
+
+  // Berth selection is a synchronous service command, not a cargo action.
+  if (FLAGS_block_berth != 0) {
+    ros::ServiceClient berth_client = nh.serviceClient<ff_msgs::SetState>(
+      SERVICE_BEHAVIORS_CARGO_SET_BLOCKED_BERTH);
+    if (!berth_client.waitForExistence(ros::Duration(FLAGS_connect))) {
+      std::cerr << "Timed out waiting for the blocked-berth service"
+                << std::endl;
+      return 1;
+    }
+    ff_msgs::SetState srv;
+    srv.request.state = FLAGS_block_berth;
+    if (!berth_client.call(srv) || !srv.response.success) {
+      std::cerr << "Unable to select cargo berth " << FLAGS_block_berth
+                << " as blocked" << std::endl;
+      return 1;
+    }
+    std::cout << "Cargo berth " << FLAGS_block_berth
+              << " is now blocked" << std::endl;
+    google::ShutDownCommandLineFlags();
+    return 0;
+  }
+
+  // Action client for cargo manipulation commands.
+  ff_util::FreeFlyerActionClient<isaac_msgs::CargoAction> client;
   // Setup SWITCH action
   client.SetConnectedTimeout(FLAGS_connect);
   client.SetActiveTimeout(FLAGS_active);

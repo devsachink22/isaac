@@ -36,23 +36,42 @@ Drop cargo - the pose is the dock pose:
 # ISS cargo berths below the Astrobee dock
 
 The ISS simulation contains two cargo-sized berths at the bottom of the two
-Astrobee dock bays. Both berths are fully opaque. The green berth is available
-for cargo; the blue berth has a black X and is permanently blocked.
+Astrobee dock bays. Both berths are fully opaque. Berth 1 always remains green
+and berth 2 always remains blue. A movable black X identifies which berth is
+blocked. Berth 2 is selected as blocked by default when the cargo node starts.
 
 The cargo mesh and each berth have the same dimensions and orientation:
 `0.266792 x 0.464894 x 0.275782 m`. On release, cargo within the 0.60 m capture
-range snaps to the green berth's front surface like a magnet and is fixed to
-the ISS. The two volumes touch face-to-face; they do not overlap. To attach a
-held cargo to the green berth, use:
+range snaps to the unmarked berth's front surface like a magnet and is fixed
+to the ISS. The two volumes touch face-to-face; they do not overlap.
+
+## Select the blocked berth
+
+The user can block either berth while cargo is idle or held. Only the black X
+moves; the berth colors and positions never change. The berth without an X is
+the magnetic cargo target. To block berth 1:
+
+    rosrun cargo cargo_tool -block_berth 1
+
+To block berth 2:
+
+    rosrun cargo cargo_tool -block_berth 2
+
+The command is rejected if a pick or drop operation is currently moving. For a
+namespaced robot, append the namespace, for example `-ns honey`.
+
+When berth 2 is blocked, attach held cargo to available berth 1 with:
 
     rosrun cargo cargo_tool -drop \
       -pose "10.0292347 -9.806 4.7411744 0 0 -0.7071068 0.7071068"
 
-The corresponding blue berth command is deliberately rejected with the
-`BERTH_FULL` result before Astrobee begins moving:
+When berth 1 is blocked, attach held cargo to available berth 2 with:
 
     rosrun cargo cargo_tool -drop \
       -pose "10.0292347 -10.312 4.7411744 0 0 -0.7071068 0.7071068"
+
+A drop command targeting the berth marked with the black X is rejected with the
+`BERTH_FULL` result before Astrobee begins moving.
 
 ## Return Astrobee to the dock after a cargo drop
 

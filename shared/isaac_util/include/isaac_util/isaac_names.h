@@ -42,8 +42,10 @@
 
 #define NODE_CARGO                                  "cargo"
 #define TOPIC_BEHAVIORS_CARGO_STATE                 "beh/cargo/state"
+#define TOPIC_BEHAVIORS_CARGO_BLOCKED_BERTH         "beh/cargo/blocked_berth"
 #define SERVICE_BEHAVIORS_CARGO_SET_STATE           "beh/cargo/set_state"
 #define SERVICE_BEHAVIORS_CARGO_SET_ANOMALY         "beh/cargo/set_anomaly"
+#define SERVICE_BEHAVIORS_CARGO_SET_BLOCKED_BERTH   "beh/cargo/set_blocked_berth"
 #define ACTION_BEHAVIORS_CARGO                      "beh/cargo"
 
 ///////////////

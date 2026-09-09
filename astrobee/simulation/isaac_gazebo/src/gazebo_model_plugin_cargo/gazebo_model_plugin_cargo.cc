@@ -32,8 +32,10 @@
 // Messages
 #include <isaac_msgs/CargoAction.h>
 #include <ff_msgs/SetState.h>
+#include <std_msgs/UInt8.h>
 
 // STL includes
+#include <atomic>
 #include <string>
 #include <thread>
 
@@ -76,9 +78,12 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
     fsm_(UNKNOWN, std::bind(&GazeboModelPluginCargo::StateCallback,
       this, std::placeholders::_1, std::placeholders::_2)),
     lock_(false),
-    available_berth_name_("cargo_berth_available"),
+    berth_1_name_("cargo_berth_1"),
+    berth_2_name_("cargo_berth_2"),
+    blocked_marker_name_("cargo_berth_blocked_marker"),
     magnetic_capture_distance_(0.60),
-    magnetic_surface_offset_(0.464894) {
+    magnetic_surface_offset_(0.464894),
+    requested_blocked_berth_(2) {
       // In an unknown state, if we are sensed to be near or far from a berth
       // then update to either a docked or undocked state.
       fsm_.Add(UNKNOWN, PICKED,
@@ -124,8 +129,14 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
   // Called when the plugin is loaded into the simulator
   void LoadCallback(ros::NodeHandle *nh,
     physics::ModelPtr model, sdf::ElementPtr sdf) {
-    if (sdf->HasElement("available_berth")) {
-      available_berth_name_ = sdf->Get<std::string>("available_berth");
+    if (sdf->HasElement("berth_1")) {
+      berth_1_name_ = sdf->Get<std::string>("berth_1");
+    }
+    if (sdf->HasElement("berth_2")) {
+      berth_2_name_ = sdf->Get<std::string>("berth_2");
+    }
+    if (sdf->HasElement("blocked_marker")) {
+      blocked_marker_name_ = sdf->Get<std::string>("blocked_marker");
     }
     if (sdf->HasElement("magnetic_capture_distance")) {
       magnetic_capture_distance_ =
@@ -139,6 +150,9 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
     // Subscribe to the cargo state callback
     sub_cargo_ = nh->subscribe(TOPIC_BEHAVIORS_CARGO_STATE, 10,
         &GazeboModelPluginCargo::CargoActionCallback, this);
+    sub_blocked_berth_ = nh->subscribe(
+      TOPIC_BEHAVIORS_CARGO_BLOCKED_BERTH, 1,
+      &GazeboModelPluginCargo::BlockedBerthCallback, this);
 
     // Defer the extrinsics setup to allow plugins to load
     update_ = event::Events::ConnectWorldUpdateEnd(
@@ -207,8 +221,45 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
     NODELET_DEBUG_STREAM("State changed to " << str);
   }
 
+  // Keep berth 1 green and berth 2 blue. Continuously place the separate
+  // black X marker on the user-selected blocked berth so Gazebo's rendering
+  // client cannot miss a one-shot pose update.
+  bool ApplyBlockedBerthLayout() {
+    #if GAZEBO_MAJOR_VERSION > 7
+    physics::ModelPtr berth_1 = GetWorld()->ModelByName(berth_1_name_);
+    physics::ModelPtr berth_2 = GetWorld()->ModelByName(berth_2_name_);
+    physics::ModelPtr marker =
+      GetWorld()->ModelByName(blocked_marker_name_);
+    #else
+    physics::ModelPtr berth_1 = GetWorld()->GetModel(berth_1_name_);
+    physics::ModelPtr berth_2 = GetWorld()->GetModel(berth_2_name_);
+    physics::ModelPtr marker = GetWorld()->GetModel(blocked_marker_name_);
+    #endif
+    if (berth_1 == nullptr || berth_2 == nullptr || marker == nullptr)
+      return false;
+
+    int blocked_berth = requested_blocked_berth_.load();
+    #if GAZEBO_MAJOR_VERSION > 7
+    marker->SetWorldPose(blocked_berth == 1 ?
+      berth_1->WorldPose() : berth_2->WorldPose(), true, true);
+    #else
+    physics::ModelPtr blocked = blocked_berth == 1 ? berth_1 : berth_2;
+    ignition::math::Pose3d blocked_pose(blocked->GetWorldPose().pos.x,
+                                        blocked->GetWorldPose().pos.y,
+                                        blocked->GetWorldPose().pos.z,
+                                        blocked->GetWorldPose().rot.w,
+                                        blocked->GetWorldPose().rot.x,
+                                        blocked->GetWorldPose().rot.y,
+                                        blocked->GetWorldPose().rot.z);
+    marker->SetWorldPose(blocked_pose);
+    #endif
+    return true;
+  }
+
   // If the robot is holding the cargo, make it follow the robot
   void BerthCallback() {
+    ApplyBlockedBerthLayout();
+
     if (lock_) {
       #if GAZEBO_MAJOR_VERSION > 7
       physics::ModelPtr cargo = GetWorld()->ModelByName(cargo_name_);
@@ -307,11 +358,14 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
   // enough to be captured. Both objects have the same local dimensions, so
   // one full local-Y length separates their centers at surface contact.
   bool SnapToAvailableBerth(physics::ModelPtr const& cargo) {
+    int available_berth = requested_blocked_berth_.load() == 1 ? 2 : 1;
+    std::string const& available_berth_name = available_berth == 1 ?
+      berth_1_name_ : berth_2_name_;
     #if GAZEBO_MAJOR_VERSION > 7
     physics::ModelPtr berth =
-      GetWorld()->ModelByName(available_berth_name_);
+      GetWorld()->ModelByName(available_berth_name);
     #else
-    physics::ModelPtr berth = GetWorld()->GetModel(available_berth_name_);
+    physics::ModelPtr berth = GetWorld()->GetModel(available_berth_name);
     #endif
     if (berth == nullptr)
       return false;
@@ -348,7 +402,7 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
     cargo->SetLinearVel(ignition::math::Vector3d(0, 0, 0));
     cargo->SetAngularVel(ignition::math::Vector3d(0, 0, 0));
     NODELET_INFO_STREAM("Magnetically attached cargo " << cargo_name_
-      << " to the front of " << available_berth_name_);
+      << " to the front of berth " << available_berth);
     return true;
   }
 
@@ -362,7 +416,7 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
         return;
       lock_ = false;
 
-      SnapToAvailableBerth(cargo);
+      bool stored_in_berth = SnapToAvailableBerth(cargo);
 
       // Fixed joint with the ISS
       #if GAZEBO_MAJOR_VERSION > 7
@@ -397,8 +451,10 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
             cargo->GetWorldPose().pos.z > us_lab_z_min &&
             cargo->GetWorldPose().pos.z < us_lab_z_max);
       #endif
-      if (!inside_US_lab) {
-        // Start colliding with the handrail
+      if (!inside_US_lab && !stored_in_berth) {
+        // Restore normal collisions for cargo released elsewhere. Cargo that
+        // is magnetically stored remains fixed and non-colliding so it cannot
+        // clip Astrobee while the robot follows the dock approach corridor.
         physics::LinkPtr link = cargo->GetLink("body");
         if (link)
           link->SetCollideMode("all");
@@ -417,14 +473,33 @@ class GazeboModelPluginCargo : public FreeFlyerModelPlugin {
     }
   }
 
+  // Store the selection atomically. Gazebo's update thread continuously moves
+  // the visual marker, and the latched topic supplies the startup selection.
+  void BlockedBerthCallback(std_msgs::UInt8::ConstPtr const& msg) {
+    if (msg->data != 1 && msg->data != 2) {
+      NODELET_WARN_STREAM("Ignoring invalid blocked cargo berth "
+        << static_cast<int>(msg->data));
+      return;
+    }
+    int previous = requested_blocked_berth_.exchange(msg->data);
+    if (previous != msg->data) {
+      NODELET_INFO_STREAM("Cargo berth " << static_cast<int>(msg->data)
+        << " is marked with a black X and blocked");
+    }
+  }
+
  private:
   ff_util::FSM fsm_;
   bool lock_;
-  std::string available_berth_name_;
+  std::string berth_1_name_;
+  std::string berth_2_name_;
+  std::string blocked_marker_name_;
   double magnetic_capture_distance_;
   double magnetic_surface_offset_;
+  std::atomic<int> requested_blocked_berth_;
   event::ConnectionPtr update_;
   ros::Subscriber sub_cargo_;
+  ros::Subscriber sub_blocked_berth_;
   ros::ServiceServer server_despawn_;
   std::string cargo_name_;
   std::map<std::string, ignition::math::Pose3d> berths_;

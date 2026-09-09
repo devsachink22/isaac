@@ -68,15 +68,16 @@
       Cargo-sized berths below the two Astrobee dock bays. Their local
       dimensions and orientation match the half-CTB cargo mesh:
       0.266792 x 0.464894 x 0.275782 m. The local +Y face points away from
-      the wall. A released cargo attaches flush to the front of the green
-      berth instead of occupying its volume.
+      the wall. Berth 1 always stays green and berth 2 always stays blue.
+      At runtime, only the separate black X marker moves to the berth selected
+      as blocked.
     -->
-    <model name='cargo_berth_available'>
+    <model name='cargo_berth_1'>
       <static>true</static>
       <pose>9.8193408 -9.806 4.7411744 0 0 -1.5707963</pose>
       <link name='berth'>
-        <!-- No collision: the magnetic drop plugin aligns cargo to its face. -->
-        <visual name='available_volume'>
+        <!-- Blocking is enforced dynamically by the cargo behavior. -->
+        <visual name='berth_1_volume'>
           <geometry>
             <box><size>0.266792 0.464894 0.275782</size></box>
           </geometry>
@@ -89,17 +90,12 @@
       </link>
     </model>
 
-    <model name='cargo_berth_blocked'>
+    <model name='cargo_berth_2'>
       <static>true</static>
       <pose>9.8193408 -10.312 4.7411744 0 0 -1.5707963</pose>
       <link name='berth'>
-        <!-- Collision plus behavior-level rejection make this berth blocked. -->
-        <collision name='blocked_volume'>
-          <geometry>
-            <box><size>0.266792 0.464894 0.275782</size></box>
-          </geometry>
-        </collision>
-        <visual name='blocked_volume'>
+        <!-- Blocking is enforced dynamically by the cargo behavior. -->
+        <visual name='berth_2_volume'>
           <geometry>
             <box><size>0.266792 0.464894 0.275782</size></box>
           </geometry>
@@ -109,7 +105,16 @@
             <emissive>0.01 0.03 0.18 1</emissive>
           </material>
         </visual>
-        <!-- A black X on the outward face makes the blocked state explicit. -->
+      </link>
+    </model>
+
+    <!-- Only this black X moves when the user changes the blocked berth. -->
+    <model name='cargo_berth_blocked_marker'>
+      <static>false</static>
+      <pose>9.8193408 -10.312 4.7411744 0 0 -1.5707963</pose>
+      <link name='marker'>
+        <gravity>false</gravity>
+        <kinematic>true</kinematic>
         <visual name='blocked_cross_positive'>
           <pose>0 0.241447 0 0 0.8018 0</pose>
           <geometry>

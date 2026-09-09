@@ -25,8 +25,10 @@
       <rate>10.0</rate>          <!-- Rate at which dock state checked  -->
       <distance>0.05</distance>  <!-- Threshold distance for magnetism  -->
       <delay>5.0</delay>         <!-- Delay between contact and docking -->
-      <!-- Snap cargo flush to the available berth when released nearby. -->
-      <available_berth>cargo_berth_available</available_berth>
+      <!-- Select the magnetic berth and move only the blocked X marker. -->
+      <berth_1>cargo_berth_1</berth_1>
+      <berth_2>cargo_berth_2</berth_2>
+      <blocked_marker>cargo_berth_blocked_marker</blocked_marker>
       <magnetic_capture_distance>0.60</magnetic_capture_distance>
       <magnetic_surface_offset>0.464894</magnetic_surface_offset>
     </plugin>

@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
     gazebo_ros
     astrobee_gazebo
     sensor_msgs
+    std_msgs
     ff_msgs
     ff_util
     isaac_util
@@ -59,6 +60,7 @@ catkin_package(
     roscpp
     visualization_msgs
     sensor_msgs
+    std_msgs
     ff_msgs
     ff_util
     isaac_util
@@ -199,4 +201,3 @@ install(
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   LIBRARY DESTINATION ${LIB_DESTINATION}
 )
-

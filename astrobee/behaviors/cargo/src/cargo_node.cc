@@ -49,6 +49,9 @@
 #include <ff_msgs/SetState.h>
 #include <isaac_msgs/SetCargoAnomaly.h>
 
+// Standard messages
+#include <std_msgs/UInt8.h>
+
 // Actions
 #include <ff_msgs/ArmAction.h>
 #include <ff_msgs/MotionAction.h>
@@ -57,6 +60,9 @@
 
 // Eigen for math
 #include <Eigen/Dense>
+
+// C++ STL includes
+#include <atomic>
 
 typedef actionlib::SimpleActionServer<isaac_msgs::CargoAction> Server;
 
@@ -339,6 +345,13 @@ class CargoNode : public ff_util::FreeFlyerNodelet {
     pub_state_ = nh->advertise<isaac_msgs::CargoState>(
       TOPIC_BEHAVIORS_CARGO_STATE, 1, true);
 
+    // Publish the selected blocked berth as a latched topic so simulation
+    // components always receive the current layout.
+    pub_blocked_berth_ = nh->advertise<std_msgs::UInt8>(
+      TOPIC_BEHAVIORS_CARGO_BLOCKED_BERTH, 1, true);
+    blocked_berth_.store(cfg_.Get<int>("default_blocked_berth"));
+    PublishBlockedBerth();
+
     // Allow the state to be manually set
     server_set_state_ = nh->advertiseService(SERVICE_BEHAVIORS_CARGO_SET_STATE,
       &CargoNode::SetStateCallback, this);
@@ -346,6 +359,11 @@ class CargoNode : public ff_util::FreeFlyerNodelet {
     // Allow the state to be manually set
     server_set_anomaly_ = nh->advertiseService(SERVICE_BEHAVIORS_CARGO_SET_ANOMALY,
       &CargoNode::SetAnomalyCallback, this);
+
+    // Allow the user to select berth 1 or berth 2 as blocked at runtime.
+    server_set_blocked_berth_ = nh->advertiseService(
+      SERVICE_BEHAVIORS_CARGO_SET_BLOCKED_BERTH,
+      &CargoNode::SetBlockedBerthCallback, this);
 
     // Setup move client action
     client_m_.SetConnectedTimeout(cfg_.Get<double>("timeout_motion_connected"));
@@ -424,12 +442,46 @@ class CargoNode : public ff_util::FreeFlyerNodelet {
     return true;
   }
 
+  void PublishBlockedBerth() {
+    std_msgs::UInt8 msg;
+    msg.data = blocked_berth_.load();
+    pub_blocked_berth_.publish(msg);
+  }
+
+  // Select which cargo berth is unavailable. Layout changes are rejected
+  // during an active pick/drop so validation and simulation remain in sync.
+  bool SetBlockedBerthCallback(ff_msgs::SetState::Request& req,
+                               ff_msgs::SetState::Response& res) {
+    if (req.state != 1 && req.state != 2) {
+      NODELET_WARN_STREAM("Blocked cargo berth must be 1 or 2");
+      res.success = false;
+      return true;
+    }
+
+    FSM::State state = fsm_.GetState();
+    if (state != STATE::INITIALIZING && state != STATE::WAITING &&
+        state != STATE::HOLDING) {
+      NODELET_WARN_STREAM("Cannot change the blocked berth during a cargo "
+        << "operation");
+      res.success = false;
+      return true;
+    }
+
+    blocked_berth_.store(req.state);
+    PublishBlockedBerth();
+    NODELET_INFO_STREAM("Cargo berth " << req.state << " is now blocked");
+    res.success = true;
+    return true;
+  }
+
   // Return true when a requested drop would place cargo against the
-  // permanently blocked blue berth. A drop goal describes the manipulator
-  // target, while the cargo body is offset by +0.255 m along local Y.
+  // user-selected blocked berth. A drop goal describes the manipulator target,
+  // while the cargo body is offset by +0.255 m along local Y.
   bool IsBlockedBerth(geometry_msgs::PoseStamped const& berth_pose) {
+    int blocked_berth = blocked_berth_.load();
     Eigen::Vector3d center(cfg_.Get<double>("blocked_berth_x"),
-                           cfg_.Get<double>("blocked_berth_y"),
+                           cfg_.Get<double>(blocked_berth == 1 ?
+                             "berth_1_y" : "berth_2_y"),
                            cfg_.Get<double>("blocked_berth_z"));
     Eigen::Vector3d half_size(cfg_.Get<double>("blocked_berth_size_x") / 2.0,
                               cfg_.Get<double>("blocked_berth_size_y") / 2.0,
@@ -873,10 +925,12 @@ class CargoNode : public ff_util::FreeFlyerNodelet {
   tf2_ros::Buffer tf_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   ros::Publisher pub_state_;
+  ros::Publisher pub_blocked_berth_;
   ros::Publisher pub_guest_sci_;
   ros::Subscriber sub_sci_cam_;
   ros::ServiceServer server_set_state_;
   ros::ServiceServer server_set_anomaly_;
+  ros::ServiceServer server_set_blocked_berth_;
   isaac_msgs::CargoGoal goal_;
   std::string cargo_id_;
   isaac_msgs::CargoResult result_;
@@ -889,6 +943,9 @@ class CargoNode : public ff_util::FreeFlyerNodelet {
 
   // Anomaly
   int anomaly_ = isaac_msgs::SetCargoAnomaly::Request::NO_ANOMALY;
+
+  // User-selected blocked berth (1 or 2)
+  std::atomic<int> blocked_berth_{2};
 
   // Inspection library
   // Inspection* inspection_;
